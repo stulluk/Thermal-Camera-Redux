@@ -1,3 +1,48 @@
+# Debian package, USB auto-detect, and desktop-launch fix
+
+This fork (and the matching pull request) adds packaging so other people can
+build and install a `.deb` without putting a compiler on the host.
+
+## What changed versus upstream 0.9.3
+
+1. **stdin / TTY guard** in `src/tc001.cpp`  
+   The stdin command thread starts only when stdin is a real terminal
+   (`isatty(STDIN_FILENO)`). A desktop launcher or script with stdin as
+   `/dev/null` used to hit EOF immediately and quit the app.
+2. **`redux` wrapper** (`packaging/thermal-camera-redux/usr/bin/redux`)  
+   Auto-selects the first V4L2 capture node with USB id `0bda:5830`
+   (Qianli Super IRCam / Topdon TC001 / InfiRay P2 Pro family) so a
+   normal webcam is not opened by mistake. Default scale is 3 when
+   `-scale` is omitted. Pass `-d N` to override.
+3. **Docker → `.deb`**  
+   `Dockerfile`, `dockerbuild.sh`, `indockerbuild.sh`, and
+   `scripts/build_deb_in_container.sh` produce
+   `dist/thermal-camera-redux_0.9.3-1_amd64.deb` using Debian sid
+   OpenCV packages. No host `-dev` packages are required.
+
+A separate Qt button GUI that talks to the same camera lives at
+https://github.com/stulluk/super-ircam — that is not part of this tree.
+
+## Build the `.deb` with Docker
+
+```bash
+./dockerbuild.sh
+./indockerbuild.sh
+sudo dpkg -i dist/thermal-camera-redux_0.9.3-1_amd64.deb
+```
+
+The package is intended for Debian sid/forky (depends on
+`libopencv-*-410`). After install, run `redux` from a terminal or the
+desktop launcher. Plug in the thermal module first.
+
+## Runtime notes
+
+- Do not export `DISPLAY` or `LD_LIBRARY_PATH` on a normal desktop session.
+- After power-on, the first ~3 seconds of frames are NUC/FFC (`0x8000`);
+  wait until the image is valid before judging picture quality.
+
+---
+
 # Thermal-Camera-Redux
 
 # NOTE: SUPPORT FOR THIS ACCOUNT WILL GO DORMANT ONCE GITHUB FORCE BLOCKS IT FOR 2FA.  SUBSEQUENT UPDATES MAYBE HOMED ELSEWHERE.  UPDATES WILL BE NOTED ON THE EEVBLOG FORUM.

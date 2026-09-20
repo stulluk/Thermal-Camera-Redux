@@ -5233,8 +5233,13 @@ int mainPrivate (int argc, char *argv[]) {
 	pthread_t imageThread;   pthread_create( &imageThread,   NULL, imageDataThread,   (void*) &threadData );
 	pthread_t thermalThread; pthread_create( &thermalThread, NULL, thermalDataThread, (void*) &threadData );
 #endif
-	// Read keyboard input from launching terminal or command file piped into stdin
-	pthread_t stdinThread;   pthread_create( &stdinThread,   NULL, stdinDataThread,   (void*) &threadData );
+	// Stdin command thread only when launched from a real terminal.
+	// Desktop/script launches have stdin as /dev/null (EOF) and would quit immediately.
+	pthread_t stdinThread = 0;
+	const int stdinIsTty = isatty(STDIN_FILENO);
+	if ( stdinIsTty ) {
+		pthread_create( &stdinThread, NULL, stdinDataThread, (void*) &threadData );
+	}
 
 	RenderData  rdMain;
 	Rect        osdROI;
